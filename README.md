@@ -1,32 +1,79 @@
-# 🏗️ Concrete Pour Weather Window (Japan)
+# 🏗️ Concrete Pour Weather Window | コンクリート打設可否判断ツール
 
-A bilingual web app that helps project managers in Japan assess if the next 48 hours are safe for a concrete pour. It evaluates hourly temperature, rain risk, and wind to provide a simple "Safe to Pour" gauge and professional curing advice based on **ACI (American Concrete Institute)** guidelines.
+A bilingual web app that helps teams in the EPC, infrastructure and construction sectors to conveniently check whether the next 48 hours are suitable for concrete pouring, using American Concrete Institute (ACI) guidelines and local weather data. Designed to promote safety, avoid rework, and support field decision-making across job sites.
 
-## 🎯 Why This Matters
+## 🧠 What This Project Does
 
-Concrete placement requires very specific conditions to avoid cracking, delayed curing, or rework. But weather forecasts are often vague, especially in construction contexts. This tool gives actionable, localized insight for Japan-based teams.
+Users can enter any city name or Japanese postal code and instantly view:
+- Hour-by-hour weather forecast (up to 48 hours)
+- Color-coded gauge showing overall pour safety
+- Risk flags based on rain, wind, and temperature
+- Curing advice based on ACI concrete placement standards
 
-## 💡 Features
+This tool supports quick, informed decisions by supervisors, engineers, and project managers — especially when balancing site pressure with safe concrete placement.
 
-- 🌐 **Bilingual Support (EN/JA)** — Switchable UI for local teams and global managers
-- 📍 **Localized Geocoding** — Search by Japanese city or postal code
-- 🕒 **48-Hour Hourly Forecast** — Evaluates each hour using Open-Meteo weather data
-- 🚦 **Green/Red Safety Gauge** — Instantly shows whether it’s safe to pour
-- 📊 **Detailed Forecast Table** — Flags conditions like:
-  - 🌡️ **Too cold**: < 5°C  
-  - 🔥 **Too hot**: > 35°C  
-  - 🌧️ **Rain risk**: High probability or volume
-- 🧠 **Curing Tips** — Real-world recommendations based on detected conditions
-- 💻 Fully client-side, responsive, mobile-friendly
+## 🎯 Why It Matters
 
-## 🛠️ Tech Stack
+In EPC and construction projects, pouring concrete in unsuitable weather leads to cracking, curing delays, rework, and safety issues. Yet, site decisions are often made under pressure, without clear reference to global standards.
 
-- **Frontend**: HTML, Tailwind CSS, Vanilla JavaScript
-- **Weather API**: Open-Meteo (hourly forecast + geocoding)
-- **Standards Used**: ACI (American Concrete Institute) thresholds for concrete pour conditions
+In my case, I particularly observed that Japan’s summer weather, with its high humidity and sudden rain, makes this especially risky.
 
-## 🚀 How to Use
+This tool:
+- Aligns decisions with **ACI guidance**  
+- Provides **objective safety indicators**  
+- Encourages **safe scheduling and documentation**
 
-1. Clone the repo:
-   ```bash
-   git clone https://github.com/yourusername/concrete-pour-weather-window.git
+> 💡 I designed this app as part of our continuous safety efforts at Air Liquide Japan. It was also used during project planning and internal safety training sessions to demonstrate how global best practices can be made simple and accessible.
+
+## 🚀 Features
+
+- 🌐 **Bilingual Interface** — Toggle between English and Japanese
+- 📍 **Geolocation Support** — Enter any city or postal code in Japan
+- ⏱️ **48-Hour Forecast Table** — Temperature, precipitation, wind
+- 🚦 **Pour Safety Gauge** — Instant green/red indicator
+- 📋 **ACI-Based Risk Flags** — Too cold, too hot, rain risk, high wind
+- 🧠 **Curing Tips** — Responsive suggestions based on detected risks
+- 💬 **Tooltips, Thresholds, and Cautions** — All based on ACI guidance
+- 📱 Responsive layout for mobile use at job sites
+
+## 💡 ACI Weather Risk Thresholds
+
+| Condition      | Threshold                      | Action                                 |
+|----------------|--------------------------------|----------------------------------------|
+| **Too Cold**   | Temp < 5°C                     | Use insulation, heat water/aggregates |
+| **Too Hot**    | Temp > 35°C                    | Use set retarders, shading             |
+| **Rain Risk**  | Precip. > 30% or > 0.25mm      | Protect forms and surfaces             |
+| **High Wind**  | Wind > 25 m/s                  | Risk of cracking; use wind barriers    |
+
+_These thresholds are derived from ACI (American Concrete Institute) guidance on hot and cold weather concrete placement._
+
+## 🛠️ Tech Stack / Tools Used
+
+- HTML, Tailwind CSS, Vanilla JavaScript  
+- **Open-Meteo API** — Forecast and geolocation  
+- ACI standard modeling — Safety logic based on temperature, rain, wind  
+- Custom translation and UX system for bilingual rendering  
+
+## 🌐 Live Demo
+
+👉 [https://khanhaissam.github.io/concrete-pour-weather-window/](https://khanhaissam.github.io/concrete-pour-weather-window/)
+
+## 🧪 How to Run This Project
+
+> No setup needed — just clone and open `index.html` in your browser.
+
+### 🔑 Step 1: Replace Weather API Key (Optional for Open-Meteo)
+
+Open-Meteo works without authentication, but if you switch to OpenWeatherMap or another service, you’ll need to:
+
+```js
+const API_KEY = 'YOUR_OPENWEATHERMAP_API_KEY';
+```
+
+### 🗺️ Step 2: Use the Tool
+
+1. Enter a **city name** or **postal code**  
+2. Click **"Check Weather"**  
+3. View the **safety gauge** and **forecast table**  
+4. Read **ACI-based curing tips** when unsafe conditions are detected
+
