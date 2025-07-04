@@ -48,6 +48,12 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col p-4">
 
+    <!-- Solutions Banner -->
+    <div class="w-full bg-indigo-700 text-white p-3 mb-4 rounded-lg shadow-md flex items-center justify-between">
+        <span class="text-lg font-semibold" data-translate="solutionsBy">Solutions by Haissam</span>
+        <!-- You can add other elements here if needed, e.g., a logo or navigation -->
+    </div>
+
     <main class="flex-grow flex items-center justify-center">
         <div class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-3xl">
             <header class="mb-6 text-center">
@@ -111,6 +117,15 @@
                         </table>
                     </div>
                 </div>
+
+                <!-- New section for ACI & Weather Thresholds -->
+                <div>
+                    <h3 class="text-lg font-medium text-gray-700 mb-2" data-translate="thresholdsTitle">ACI & Weather Thresholds:</h3>
+                    <div id="thresholdsInfo" class="p-4 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-800 space-y-1">
+                        <p data-translate="aciThresholdsDetails"></p>
+                        <p data-translate="windThresholdDetails"></p>
+                    </div>
+                </div>
     
                 <div>
                     <h3 class="text-lg font-medium text-gray-700 mb-2" data-translate="curingTipsTitle">Curing Tips & Considerations:</h3>
@@ -122,8 +137,10 @@
     </main>
 
     <footer class="text-center text-xs text-gray-500 mt-8 pb-4 flex-shrink-0">
-        <span data-translate="weatherProvider">Weather data provided by</span> <a href="https://open-meteo.com/" target="_blank" class="text-indigo-600 hover:underline">Open-Meteo.com</a>.
-        <br><span data-translate="aciThresholdsFooter">ACI Thresholds: Temp &lt; 5°C (cold) or &gt; 35°C (hot), and rain limits.</span>
+        <span data-translate="developedWith"></span>
+        <br><span data-translate="preparedBy"></span>
+        <br><span data-translate="dataSource"></span>
+        <br><span data-translate="license"></span>
     </footer>
 
     <script>
@@ -138,9 +155,20 @@
         const forecastTableBody = document.getElementById('forecastTableBody');
         const curingTipsDiv = document.getElementById('curingTips');
         const languageToggleBtn = document.getElementById('languageToggleBtn');
+        const thresholdsInfoDiv = document.getElementById('thresholdsInfo'); // New: Get the thresholds info div
 
-        // --- Language and Translation ---
+        // --- Constants for ACI Thresholds ---
+        const ACI_COLD_TEMP_C = 5;
+        const ACI_HOT_TEMP_C = 35;
+        const PRECIP_PROB_THRESHOLD = 30; // Percentage
+        const PRECIP_AMOUNT_THRESHOLD_MM = 0.25; // Millimeters
+        const ACI_HIGH_WIND_MS = 25; // Meters per second
+
+        // --- Global State ---
         let currentLanguage = 'en'; // Default language
+        window.lastWeatherData = null; // Stores last successful weather data for language toggling
+
+        // --- Translations ---
         const translations = {
             en: {
                 appTitle: "Concrete Pour Weather Window (Japan)",
@@ -158,8 +186,6 @@
                 windHeader: "Wind (m/s)",
                 conditionHeader: "Condition",
                 curingTipsTitle: "Curing Tips & Considerations:",
-                weatherProvider: "Weather data provided by",
-                aciThresholdsFooter: "ACI Thresholds: Temp < 5°C (cold) or > 35°C (hot), and rain limits.",
                 gaugeSafe: "SAFE TO POUR",
                 gaugeUnsafe: "UNSAFE TO POUR",
                 gaugeInitializing: "Initializing...",
@@ -167,9 +193,11 @@
                 conditionTooCold: "Too Cold",
                 conditionTooHot: "Too Hot",
                 conditionRainRisk: "Rain Risk",
-                tipCold: `<strong>Cold Weather Alert:</strong> Temperatures below 5°C detected. Consider using insulating blankets, heating aggregates/water, or Type III (high-early-strength) cement. Protect concrete from freezing.`,
-                tipHot: `<strong>Hot Weather Alert:</strong> Temperatures above 35°C detected. Consider cooling aggregates/water, using set-retarding admixtures, erecting windbreaks/sunshades, and mist spraying forms/subgrade. Plan for rapid curing.`,
+                conditionHighWind: "High Wind",
+                tipCold: `<strong>Cold Weather Alert:</strong> Temperatures below ${ACI_COLD_TEMP_C}°C detected. Consider using insulating blankets, heating aggregates/water, or Type III (high-early-strength) cement. Protect concrete from freezing.`,
+                tipHot: `<strong>Hot Weather Alert:</strong> Temperatures above ${ACI_HOT_TEMP_C}°C detected. Consider cooling aggregates/water, using set-retarding admixtures, erecting windbreaks/sunshades, and mist spraying forms/subgrade. Plan for rapid curing.`,
                 tipRain: `<strong>Rain Risk Detected:</strong> Significant chance of precipitation. Protect fresh concrete from rain (e.g., with plastic sheeting). Ensure forms are free of standing water before pouring.`,
+                tipWind: `<strong>High Wind Alert:</strong> Wind speeds above ${ACI_HIGH_WIND_MS} m/s detected. High winds can accelerate surface drying, leading to plastic shrinkage cracking. Consider temporary windbreaks or fog spraying.`,
                 tipNoIssues: "No specific adverse conditions identified based on ACI thresholds. Always follow best practices for concrete placement and curing.",
                 errorZipFormat: "Please enter a City or Postal code.",
                 errorNotFound: (query) => `Could not find location for: "${query}". Please check the name and try again.`,
@@ -177,7 +205,19 @@
                 errorWeatherGeneric: "Failed to fetch weather data. Please try again later.",
                 errorUnexpected: "An unexpected error occurred. Please try again.",
                 locationDisplayPrefix: "Weather for", // For English: "Weather for Tokyo"
-                locationDisplaySuffix: ""
+                locationDisplaySuffix: "",
+
+                // New footer translations
+                developedWith: "Developed with Cursor AI",
+                preparedBy: "Prepared by Haissam - engr.haissam@gmail.com",
+                dataSource: "Data from Open-Meteo Geocoding & Weather Forecast.",
+                license: "Licensed under CC BY-SA 4.0.",
+
+                // New thresholds section translations
+                thresholdsTitle: "ACI & Weather Thresholds:",
+                aciThresholdsDetails: `ACI Thresholds: Concrete pouring is generally advised against when temperatures are below ${ACI_COLD_TEMP_C}°C (cold) or above ${ACI_HOT_TEMP_C}°C (hot).`,
+                windThresholdDetails: `Wind Threshold: High wind speeds exceeding ${ACI_HIGH_WIND_MS} m/s can significantly impact concrete curing and are considered a risk.`,
+                solutionsBy: "Solutions by Haissam" // New translation key for the banner
             },
             jp: {
                 appTitle: "コンクリート打設可否判断ウィンドウ（日本）",
@@ -195,8 +235,6 @@
                 windHeader: "風速 (m/s)",
                 conditionHeader: "状態",
                 curingTipsTitle: "養生に関する注意点と考慮事項：",
-                weatherProvider: "気象データ提供元：",
-                aciThresholdsFooter: "ACI基準：気温 < 5°C（低温）または > 35°C（高温）、および降雨制限。",
                 gaugeSafe: "打設可能",
                 gaugeUnsafe: "打設不可",
                 gaugeInitializing: "初期化中...",
@@ -204,9 +242,11 @@
                 conditionTooCold: "低温すぎ",
                 conditionTooHot: "高温すぎ",
                 conditionRainRisk: "降雨リスク",
-                tipCold: `<strong>低温注意：</strong>5°C未満の気温が予測されます。断熱ブランケットの使用、骨材や水の加熱、III種（早強）セメントの使用を検討してください。コンクリートを凍結から保護してください。`,
-                tipHot: `<strong>高温注意：</strong>35°Cを超える気温が予測されます。骨材や水の冷却、凝結遅延剤の使用、防風壁や日よけの設置、型枠や下地への噴霧を検討してください。急速な硬化に備えてください。`,
+                conditionHighWind: "強風",
+                tipCold: `<strong>低温注意：</strong>気温が${ACI_COLD_TEMP_C}°C未満と予測されます。断熱ブランケットの使用、骨材や水の加熱、III種（早強）セメントの使用を検討してください。コンクリートを凍結から保護してください。`,
+                tipHot: `<strong>高温注意：</strong>気温が${ACI_HOT_TEMP_C}°Cを超えると予測されます。骨材や水の冷却、凝結遅延剤の使用、防風壁や日よけの設置、型枠や下地への噴霧を検討してください。急速な硬化に備えてください。`,
                 tipRain: `<strong>降雨リスク：</strong>かなりの降水確率が予測されます。打設直後のコンクリートを雨から保護してください（例：プラスチックシート）。打設前に型枠内に水が溜まっていないことを確認してください。`,
+                tipWind: `<strong>強風注意：</strong>風速が${ACI_HIGH_WIND_MS} m/sを超えると予測されます。強風は表面乾燥を促進し、プラスチック収縮ひび割れを引き起こす可能性があります。一時的な防風壁や霧吹き散水を検討してください。`,
                 tipNoIssues: "ACI基準に基づく特定の悪条件は確認されませんでした。常にコンクリート打設と養生のベストプラクティスに従ってください。",
                 errorZipFormat: "都市名または郵便番号を入力してください。",
                 errorNotFound: (query) => `「${query}」の場所が見つかりませんでした。名称を確認して再試行してください。`,
@@ -214,13 +254,51 @@
                 errorWeatherGeneric: "気象データの取得に失敗しました。しばらくしてから再試行してください。",
                 errorUnexpected: "予期せぬエラーが発生しました。再試行してください。",
                 locationDisplayPrefix: "", // For Japanese: "東京の天気"
-                locationDisplaySuffix: "の天気"
+                locationDisplaySuffix: "の天気",
+
+                // New footer translations
+                developedWith: "Cursor AIで開発",
+                preparedBy: "作成者：Haissam - engr.haissam@gmail.com",
+                dataSource: "データ提供：Open-Meteo Geocoding & Weather Forecast。",
+                license: "ライセンス：CC BY-SA 4.0。",
+
+                // New thresholds section translations
+                thresholdsTitle: "ACIおよび気象基準：",
+                aciThresholdsDetails: `ACI基準：一般的に、気温が${ACI_COLD_TEMP_C}°C未満（低温）または${ACI_HOT_TEMP_C}°C超（高温）の場合、コンクリート打設は推奨されません。`,
+                windThresholdDetails: `風速基準：${ACI_HIGH_WIND_MS} m/sを超える強風は、コンクリートの養生に大きな影響を与え、リスクと見なされます。`,
+                solutionsBy: "Haissamによるソリューション" // New translation key for the banner
             }
         };
 
+        /**
+         * Initializes the application by setting up event listeners and initial UI state.
+         */
+        function initApp() {
+            // Set initial gauge text (before any data is fetched)
+            weatherGaugeDiv.textContent = translations[currentLanguage].gaugeInitializing;
+
+            // Initialize language on load for static elements
+            setLanguage(currentLanguage);
+
+            // Add event listeners
+            checkWeatherBtn.addEventListener('click', handleFetchWeather);
+            locationInput.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    handleFetchWeather();
+                }
+            });
+            languageToggleBtn.addEventListener('click', () => {
+                setLanguage(currentLanguage === 'en' ? 'jp' : 'en');
+            });
+        }
+
+        /**
+         * Sets the application language and updates all translatable UI elements.
+         * @param {string} lang - The language code ('en' or 'jp').
+         */
         function setLanguage(lang) {
             currentLanguage = lang;
-            document.body.className = lang === 'jp' ? 'lang-jp' : '';
+            document.body.className = lang === 'jp' ? 'lang-jp' : ''; // Apply font class
             document.querySelectorAll('[data-translate]').forEach(el => {
                 const key = el.getAttribute('data-translate');
                 if (translations[lang][key]) {
@@ -235,28 +313,13 @@
             });
             // If weather data is already displayed, re-render its text parts in the new language
             if (!resultsSection.classList.contains('hidden') && window.lastWeatherData) {
-                 processAndDisplayWeather(window.lastWeatherData.data, window.lastWeatherData.locName, window.lastWeatherData.admin1, window.lastWeatherData.country);
+                processAndDisplayWeather(window.lastWeatherData.data, window.lastWeatherData.locName, window.lastWeatherData.admin1, window.lastWeatherData.country);
             }
         }
 
-        languageToggleBtn.addEventListener('click', () => {
-            setLanguage(currentLanguage === 'en' ? 'jp' : 'en');
-        });
-        
-        const ACI_COLD_TEMP_C = 5;
-        const ACI_HOT_TEMP_C = 35;
-        const PRECIP_PROB_THRESHOLD = 30;
-        const PRECIP_AMOUNT_THRESHOLD_MM = 0.25;
-
-        window.lastWeatherData = null;
-
-        checkWeatherBtn.addEventListener('click', handleFetchWeather);
-        locationInput.addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
-                handleFetchWeather();
-            }
-        });
-
+        /**
+         * Handles the overall weather data fetching process, including UI state management.
+         */
         async function handleFetchWeather() {
             const locationQuery = locationInput.value.trim();
             if (!locationQuery) {
@@ -264,40 +327,40 @@
                 return;
             }
 
+            // Reset UI and show loading state
             resultsSection.classList.add('hidden');
             errorMessageDiv.classList.add('hidden');
             loadingIndicator.classList.remove('hidden');
+            checkWeatherBtn.disabled = true; // Disable button during fetch
 
             try {
-                const coordinates = await getCoordinates(locationQuery);
-                if (!coordinates) { return; } // Error handled in getCoordinates
-                const weatherData = await getWeather(coordinates.latitude, coordinates.longitude);
-                if (!weatherData) { return; } // Error handled in getWeather
+                const coordinates = await fetchLocationData(locationQuery);
+                if (!coordinates) { return; } // Error handled in fetchLocationData
+
+                const weatherData = await fetchWeatherData(coordinates.latitude, coordinates.longitude);
+                if (!weatherData) { return; } // Error handled in fetchWeatherData
                 
-                // Store the successfully fetched data
+                // Store the successfully fetched data for language toggling
                 window.lastWeatherData = { data: weatherData, locName: coordinates.name, admin1: coordinates.admin1, country: coordinates.country };
+                
                 // Process and display using the current language
                 processAndDisplayWeather(weatherData, coordinates.name, coordinates.admin1, coordinates.country);
 
             } catch (error) {
-                // Enhanced error logging
-                if (error instanceof Error) {
-                    console.error("Error in weather fetching process:", error.message, error.stack);
-                } else {
-                    // Attempt to stringify if it's an object, otherwise just log it
-                    let errDetails = error;
-                    try {
-                        errDetails = JSON.stringify(error);
-                    } catch (e) { /* ignore stringify error */ }
-                    console.error("Error in weather fetching process (unknown/non-Error type):", errDetails);
-                }
+                console.error("Error in weather fetching process:", error);
                 displayError(translations[currentLanguage].errorUnexpected);
             } finally {
                 loadingIndicator.classList.add('hidden');
+                checkWeatherBtn.disabled = false; // Re-enable button
             }
         }
 
-        async function getCoordinates(query) {
+        /**
+         * Fetches geographical coordinates for a given location query.
+         * @param {string} query - The city name or postal code.
+         * @returns {Promise<object|null>} - Latitude, longitude, name, admin1, and country code, or null if an error occurs.
+         */
+        async function fetchLocationData(query) {
             const geoApiUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json&countryCodes=JP`;
             try {
                 const response = await fetch(geoApiUrl);
@@ -318,15 +381,19 @@
                     country: location.country_code
                 };
             } catch (error) {
-                console.error("Geocoding error:", error.message ? error.message : JSON.stringify(error));
+                console.error("Geocoding error:", error);
                 displayError(translations[currentLanguage].errorGeoGeneric);
-                // Ensure loading indicator is hidden on error path
-                loadingIndicator.classList.add('hidden');
                 return null;
             }
         }
 
-        async function getWeather(latitude, longitude) {
+        /**
+         * Fetches hourly weather data for given coordinates.
+         * @param {number} latitude - The latitude.
+         * @param {number} longitude - The longitude.
+         * @returns {Promise<object|null>} - Weather data object, or null if an error occurs.
+         */
+        async function fetchWeatherData(latitude, longitude) {
             const weatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,precipitation_probability,precipitation,windspeed_10m&temperature_unit=celsius&windspeed_unit=ms&precipitation_unit=mm&timeformat=unixtime&forecast_days=3&timezone=auto`;
             try {
                 const response = await fetch(weatherApiUrl);
@@ -335,30 +402,35 @@
                 }
                 return await response.json();
             } catch (error) {
-                console.error("Weather data fetching error:", error.message ? error.message : JSON.stringify(error));
+                console.error("Weather data fetching error:", error);
                 displayError(translations[currentLanguage].errorWeatherGeneric);
-                 // Ensure loading indicator is hidden on error path
-                loadingIndicator.classList.add('hidden');
                 return null;
             }
         }
 
+        /**
+         * Processes the fetched weather data and updates the UI.
+         * @param {object} weatherData - The raw weather data from Open-Meteo.
+         * @param {string} locName - The primary location name.
+         * @param {string} admin1 - The administrative division (e.g., prefecture).
+         * @param {string} country - The country code.
+         */
         function processAndDisplayWeather(weatherData, locName, admin1, country) {
-            // This function now assumes currentLanguage is already correctly set.
-            // It will render the UI based on that currentLanguage.
             const hourly = weatherData.hourly;
             const now = Math.floor(Date.now() / 1000); 
             
+            // Find the starting index for the next 48 hours from the current time
             let startIndex = hourly.time.findIndex(t => t >= now);
-            if (startIndex === -1) { startIndex = 0; }
+            if (startIndex === -1) { startIndex = 0; } // Fallback if current time is beyond available forecast
 
             const forecastHours = [];
             let overallUnsafe = false;
-            let issuesFound = { cold: false, hot: false, rain: false };
+            let issuesFound = { cold: false, hot: false, rain: false, wind: false };
 
+            // Iterate through the next 48 hours of forecast data
             for (let i = 0; i < 48; i++) {
                 const currentIndex = startIndex + i;
-                if (currentIndex >= hourly.time.length) break;
+                if (currentIndex >= hourly.time.length) break; // Stop if we run out of forecast data
 
                 const time = hourly.time[currentIndex];
                 const temp = hourly.temperature_2m[currentIndex];
@@ -367,27 +439,54 @@
                 const wind = hourly.windspeed_10m[currentIndex];
 
                 let conditionIssues = [];
+                let isHourUnsafe = false; // Flag for individual hour safety
+
+                // Check against ACI thresholds
                 if (temp < ACI_COLD_TEMP_C) {
                     conditionIssues.push(translations[currentLanguage].conditionTooCold);
                     issuesFound.cold = true;
                     overallUnsafe = true;
+                    isHourUnsafe = true;
                 }
                 if (temp > ACI_HOT_TEMP_C) {
                     conditionIssues.push(translations[currentLanguage].conditionTooHot);
                     issuesFound.hot = true;
                     overallUnsafe = true;
+                    isHourUnsafe = true;
                 }
                 if (precipProb > PRECIP_PROB_THRESHOLD || precipAmount > PRECIP_AMOUNT_THRESHOLD_MM) {
                     conditionIssues.push(translations[currentLanguage].conditionRainRisk);
                     issuesFound.rain = true;
                     overallUnsafe = true;
+                    isHourUnsafe = true;
+                }
+                if (wind > ACI_HIGH_WIND_MS) {
+                    conditionIssues.push(translations[currentLanguage].conditionHighWind);
+                    issuesFound.wind = true;
+                    overallUnsafe = true;
+                    isHourUnsafe = true;
                 }
                 
                 const conditionText = conditionIssues.length > 0 ? conditionIssues.join(', ') : translations[currentLanguage].conditionOk;
-                forecastHours.push({ time, temp, precipProb, precipAmount, wind, conditionText });
+                forecastHours.push({ time, temp, precipProb, precipAmount, wind, conditionText, isHourUnsafe });
             }
 
-            // Display location name
+            renderLocationName(locName, admin1, country);
+            updateWeatherGauge(overallUnsafe);
+            renderForecastTable(forecastHours);
+            updateCuringTips(issuesFound);
+            
+            // Show results section
+            resultsSection.classList.remove('hidden');
+        }
+
+        /**
+         * Renders the location name in the UI.
+         * @param {string} locName - The primary location name.
+         * @param {string} admin1 - The administrative division.
+         * @param {string} country - The country code.
+         */
+        function renderLocationName(locName, admin1, country) {
             const prefix = translations[currentLanguage].locationDisplayPrefix;
             const suffix = translations[currentLanguage].locationDisplaySuffix;
             const separator = currentLanguage === 'jp' ? '、' : ', ';
@@ -402,7 +501,13 @@
             } else {
                 locationNameDiv.textContent = `${prefix} ${fullLocationName}`;
             }
+        }
 
+        /**
+         * Updates the overall pour safety gauge.
+         * @param {boolean} overallUnsafe - True if any hour is unsafe, false otherwise.
+         */
+        function updateWeatherGauge(overallUnsafe) {
             if (overallUnsafe) {
                 weatherGaugeDiv.textContent = translations[currentLanguage].gaugeUnsafe;
                 weatherGaugeDiv.className = 'gauge p-4 rounded-lg text-center text-white font-bold text-xl shadow bg-red-500 hover:bg-red-600';
@@ -410,18 +515,34 @@
                 weatherGaugeDiv.textContent = translations[currentLanguage].gaugeSafe;
                 weatherGaugeDiv.className = 'gauge p-4 rounded-lg text-center text-white font-bold text-xl shadow bg-green-500 hover:bg-green-600';
             }
-            
-            // Update table headers (already handled by setLanguage calling this, but good for direct calls too)
+        }
+
+        /**
+         * Renders the hourly forecast table.
+         * @param {Array<object>} forecastHours - Array of hourly forecast data.
+         */
+        function renderForecastTable(forecastHours) {
+            forecastTableBody.innerHTML = ''; // Clear previous entries
+
+            // Update table headers (important for language changes)
+            document.querySelector('[data-translate="timeHeader"]').textContent = translations[currentLanguage].timeHeader;
             document.querySelector('[data-translate="tempHeader"]').textContent = translations[currentLanguage].tempHeader;
+            document.querySelector('[data-translate="precipProbHeader"]').textContent = translations[currentLanguage].precipProbHeader;
             document.querySelector('[data-translate="precipHeader"]').textContent = translations[currentLanguage].precipHeader;
             document.querySelector('[data-translate="windHeader"]').textContent = translations[currentLanguage].windHeader;
+            document.querySelector('[data-translate="conditionHeader"]').textContent = translations[currentLanguage].conditionHeader;
 
-            forecastTableBody.innerHTML = '';
+
             forecastHours.forEach(hour => {
                 const date = new Date(hour.time * 1000);
                 const formattedTime = date.toLocaleString(currentLanguage === 'jp' ? 'ja-JP' : 'en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: currentLanguage === 'en' });
 
                 const row = forecastTableBody.insertRow();
+                // Add a class to the row if the hour is unsafe for visual highlighting
+                if (hour.isHourUnsafe) {
+                    row.classList.add('bg-red-50'); // Light red background for unsafe hours
+                }
+
                 row.insertCell().textContent = formattedTime;
                 row.insertCell().textContent = hour.temp.toFixed(1);
                 row.insertCell().textContent = hour.precipProb.toFixed(0);
@@ -436,9 +557,16 @@
                     conditionCell.classList.add('text-green-600', 'font-semibold');
                 }
             });
+        }
 
-            curingTipsDiv.innerHTML = '';
+        /**
+         * Updates the curing tips section based on detected issues.
+         * @param {object} issuesFound - Object indicating which issues were found (cold, hot, rain, wind).
+         */
+        function updateCuringTips(issuesFound) {
+            curingTipsDiv.innerHTML = ''; // Clear previous tips
             let tipsAdded = false;
+
             if (issuesFound.cold) {
                 const tip = document.createElement('p');
                 tip.innerHTML = translations[currentLanguage].tipCold;
@@ -457,27 +585,34 @@
                  curingTipsDiv.appendChild(tip);
                  tipsAdded = true;
             }
+            if (issuesFound.wind) {
+                const tip = document.createElement('p');
+                tip.innerHTML = translations[currentLanguage].tipWind;
+                curingTipsDiv.appendChild(tip);
+                tipsAdded = true;
+            }
 
             if (!tipsAdded) {
                 const tip = document.createElement('p');
                 tip.textContent = translations[currentLanguage].tipNoIssues;
                 curingTipsDiv.appendChild(tip);
             }
-            
-            resultsSection.classList.remove('hidden');
         }
 
+        /**
+         * Displays an error message to the user and hides results/loading indicators.
+         * @param {string} message - The error message to display.
+         */
         function displayError(message) {
             errorMessageDiv.textContent = message;
             errorMessageDiv.classList.remove('hidden');
             resultsSection.classList.add('hidden'); // Hide results if error occurs
             loadingIndicator.classList.add('hidden');
+            checkWeatherBtn.disabled = false; // Ensure button is re-enabled on error
         }
 
-        // Initialize language on load for static elements
-        setLanguage(currentLanguage);
-        // Set initial gauge text (before any data is fetched)
-        weatherGaugeDiv.textContent = translations[currentLanguage].gaugeInitializing;
+        // Initialize the application when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', initApp);
 
     </script>
 </body>
